@@ -39,13 +39,13 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
-            <li class="nav-item active">
+            <li class="nav-item">
               <a class="nav-link" href="/">Wallet Generator
-                <span class="sr-only">(current)</span>
               </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item active">
               <a class="nav-link" href="/make/transaction">Make Transaction</a>
+              <span class="sr-only">(current)</span>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#">Check Transactions</a>
@@ -56,16 +56,13 @@
     </nav>
 
 
-
     <div class="container">
       <div class="row">
-        <div class="col-lg-12 text-center">
-
+        <div class="col-lg-12">
 
           <div class="card-body">
-            <h5 class="card-title">Wallet Generator</h5>
-            <p class="card-text">Click on the button below to generate your blockchain wallet</p>
-            <input type="button" class="btn btn-primary btn-lg" value="Generate Wallet">
+            <h5 class="card-title">Send Coins</h5>
+            <p class="card-text">Enter transaction details and click on "Generate Transaction" button to generate your transaction</p>
           </div>
 
         </div>
@@ -74,25 +71,62 @@
 
     <br>
 
-    <div class="container">
+
+
+    <div class="container alert alert-secondary">
+    <form id="transaction_form">
 
         <div class="row">
-          <label class="col-sm-2">Public Key:</label>
+          <label class="col-sm-2">Sender Address:</label>
           <div class="col-sm-10">
-            <textarea id="public_key" rows="5" class="form-control" readonly></textarea>
+            <input type="text" name="sender_address" rows="2" class="form-control">
+
           </div>
         </div>
 
         <br>
         
         <div class="row">
-          <label class="col-sm-2">Private Key:</label>
+          <label class="col-sm-2">Sender Private Key:</label>
           <div class="col-sm-10">
-            <textarea id="private_key" rows="5" class="form-control" readonly></textarea>
+            <input type="text" name="sender_private_key" rows="2" class="form-control">
           </div>
         </div>
 
         <br>
+        
+        <div class="row">
+          <label class="col-sm-2">Recipient Address:</label>
+          <div class="col-sm-10">
+            <input type="text" name="recipient_address" rows="2" class="form-control">
+          </div>
+        </div>
+
+        <br>
+        
+        <div class="row">
+          <label class="col-sm-2">Amount to Send:</label>
+          <div class="col-sm-10">
+            <input type="text" name="amount" rows="2" class="form-control">
+          </div>
+        </div>
+
+        <br>
+        
+        <div class="row">
+          <div class="col-lg-12 text-center">
+            <input type="button" id="generate_transaction" class="btn btn-primary btn-lg" value="Generate Transaction">
+          </div>
+        </div>
+
+        <br>
+
+    </form>
+    </div>
+
+
+
+    <div class="container">
 
         <div class="row" id="warning" style="display:none">
           <div class="col-sm-12">
@@ -113,8 +147,6 @@
 
 
 
-
-
     <!-- Bootstrap core JavaScript -->
     <script src="/static/vendor/jquery/jquery.min.js"></script>
     <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -122,26 +154,33 @@
 
     <script>
 
-      $(function(){
-        $('input').click(function(){
+      $(function () {
+          $("#generate_transaction").click(function () {
 
-          $.ajax({
-            url: '/wallet/new',
-            type: 'GET',
-            success: function(response){
-              document.getElementById("private_key").innerHTML = response['private_key'];
-              document.getElementById("public_key").innerHTML = response['public_key'];
-              document.getElementById("warning").style.display = "block";
-            },
-            error: function(error){
-              console.log(error);
-            }
+            $.ajax({
+              url: "/generate/transaction",
+              type: "POST",
+              dataType : 'json',
+              data: $('#transaction_form').serialize(),
+              success: function(response){
+                console.log("Successful Transaction");
+
+              },
+              error: function(error){
+                console.log(error);
+              }
+            });
+
+
+            
           });
-        });
-      })
+      });
+
+
 
 
     </script>
+
 
 
 

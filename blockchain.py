@@ -14,6 +14,7 @@ References      : https://github.com/dvf/blockchain/blob/master/blockchain.py
                   https://github.com/julienr/ipynb_playground/blob/master/bitcoin/dumbcoin/dumbcoin.ipynb
                   https://github.com/blockchain-academy/how-build-your-own-blockchain/tree/master/src
 '''
+import binascii
 
 import Crypto
 import Crypto.Random
@@ -30,36 +31,20 @@ from uuid import uuid4
 import requests
 from flask import Flask, jsonify, request
 
+
+
 MINING_SENDER = "THE BLOCKCHAIN"
+MINING_PRIVATE_KEY = ""
 MINING_REWARD = 1
 MINING_DIFFICULTY = 2
 
-class Wallet:
-    """
-    A wallet is a private/public key pair
-    """
-    def __init__(self):
-        random_gen = Crypto.Random.new().read
-        self._private_key = RSA.generate(1024, random_gen)
-        self._public_key = self._private_key.publickey()
-        self._signer = PKCS1_v1_5.new(self._private_key)
-        
-    @property
-    def address(self):
-        """We take a shortcut and say address is public key"""
-        return binascii.hexlify(self._public_key.exportKey(format='DER')).decode('ascii')
-    
-    def sign(self, message):
-        """
-        Sign a message with this wallet
-        """
-        h = SHA.new(message.encode('utf8'))
-        return binascii.hexlify(self._signer.sign(h)).decode('ascii')
+
 
 class Transaction:
 
-    def __init__(self, sender_address, recipient_address, value):
+    def __init__(self, sender_address, sender_private_key, recipient_address, value):
         self.sender_address = sender_address
+        self.sender_private_key = sender_private_key
         self.recipient_address = recipient_address
         self.value = value
 
@@ -71,44 +56,16 @@ class Transaction:
                 'recipient_address': self.recipient_address,
                 'value': self.value}
 
-
-class Block:
-
-    def __init__(self, block_number, timestamp, transactions,  nonce, previous_hash):
-        self.block_number = block_number
-        self.timestamp = timestamp
-        self.transactions = transactions
-        self.nonce = nonce
-        self.previous_hash = previous_hash
-
-
-    def __getattr__(self, attr):
-        return self.data[attr]
-
-
-    def to_dict(self):
+    def sign_transaction(self):
         """
-        Returns a python dict with block information
+        Sign transaction with private key
         """
+        private_key = RSA.importKey(binascii.unhexlify(self.sender_private_key))
+        signer = PKCS1_v1_5.new(private_key)
+        h = SHA.new(str(self.to_dict()).encode('utf8'))
+        return binascii.hexlify(signer.sign(h)).decode('ascii')
 
-        block = {'block_number': self.block_number,
-                'timestamp': self.timestamp,
-                'transactions': self.transactions,
-                'nonce': self.nonce,
-                'previous_hash': self.previous_hash}
-        return block
 
-    def hash(self):
-        """
-        Creates a SHA-256 hash of a Block
-        """
-
-        block = self.to_dict()
-
-        # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
-        block_string = json.dumps(block, sort_keys=True).encode()
-        
-        return hashlib.sha256(block_string).hexdigest()
 
 
 class Node:
@@ -136,6 +93,7 @@ class Blockchain:
         #Create genesis block
         self.create_block(0, '00')
 
+
     def register_node(self, node_url):
         """
         Add a new node to the list of nodes
@@ -153,19 +111,37 @@ class Blockchain:
             raise ValueError('Invalid URL')
 
 
-    def submit_transaction(self, sender_address, recipient_address, value):
+    def verify_transaction_signature(self, sender_address, signature, transaction_dict):
+        """
+        Check that the provided `signature` corresponds to `message`
+        signed by the wallet at `wallet_address`
+        """
+        public_key = RSA.importKey(binascii.unhexlify(sender_address))
+        verifier = PKCS1_v1_5.new(public_key)
+        h = SHA.new(transaction_dict.encode('utf8'))
+        return verifier.verify(h, binascii.unhexlify(signature))
+
+
+    def submit_transaction(self, sender_address, sender_private_key, recipient_address, value):
         """
         Description
         """
 
-        sender_address = sender_address
-        recipient_address = recipient_address
-        value = value
+        transaction = Transaction(sender_address, sender_private_key, recipient_address, value)
 
-        transaction = Transaction(sender_address, recipient_address, value)
-        self.transactions.append(transaction.to_dict())
-
-        return len(self.chain) + 1
+        #Reward for mining a block
+        if sender_address == MINING_SENDER:
+            self.transactions.append(transaction.to_dict())
+            return len(self.chain) + 1
+        #Manages transactions from wallet to another wallet
+        else:
+            signature = transaction.sign_transaction()
+            transaction_verification = self.verify_transaction_signature(sender_address, signature, str(transaction.to_dict()))
+            if transaction_verification:
+                self.transactions.append(transaction.to_dict())
+                return len(self.chain) + 1
+            else:
+                return False
 
 
 
@@ -197,6 +173,7 @@ class Blockchain:
         block_string = json.dumps(block, sort_keys=True).encode()
         
         return hashlib.sha256(block_string).hexdigest()
+
 
     def proof_of_work(self):
         """
@@ -299,7 +276,7 @@ def mine():
 
     # We must receive a reward for finding the proof.
     # The sender is "0" to signify that this node has mined a new coin.
-    blockchain.submit_transaction(sender_address=MINING_SENDER, recipient_address=blockchain.node_id, value=MINING_REWARD)
+    blockchain.submit_transaction(sender_address=MINING_SENDER, sender_private_key=MINING_PRIVATE_KEY, recipient_address=blockchain.node_id, value=MINING_REWARD)
 
     # Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
@@ -320,15 +297,19 @@ def new_transaction():
     values = request.get_json()
 
     # Check that the required fields are in the POST'ed data
-    required = ['sender_address', 'recipient_address', 'value']
+    required = ['sender_address', 'sender_private_key', 'recipient_address', 'value']
     if not all(k in values for k in required):
         return 'Missing values', 400
 
     # Create a new Transaction
-    index = blockchain.submit_transaction(values['sender_address'], values['recipient_address'], values['value'])
+    transaction_result = blockchain.submit_transaction(values['sender_address'], values['sender_private_key'], values['recipient_address'], values['value'])
 
-    response = {'message': 'Transaction will be added to Block '+ str(index)}
-    return jsonify(response), 201
+    if transaction_result == False:
+        response = {'message': 'Invalid Transaction!'}
+        return jsonify(response), 406
+    else:
+        response = {'message': 'Transaction will be added to Block '+ str(index)}
+        return jsonify(response), 201
 
 
 @app.route('/chain', methods=['GET'])
