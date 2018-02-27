@@ -12,19 +12,7 @@
 
     <!-- Bootstrap core CSS -->
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom styles for this template -->
-    <style>
-      body {
-        padding-top: 54px;
-      }
-      @media (min-width: 992px) {
-        body {
-          padding-top: 56px;
-        }
-      }
-
-    </style>
+    <link href="/static/css/custom.css" rel="stylesheet">
 
   </head>
 
@@ -61,7 +49,7 @@
         <div class="col-lg-12">
 
           <div class="card-body">
-            <h5 class="card-title">Send Coins</h5>
+            <h6 class="card-title">Send Coins</h6>
             <p class="card-text">Enter transaction details and click on "Generate Transaction" button to generate your transaction</p>
           </div>
 
@@ -72,14 +60,13 @@
     <br>
 
 
-
     <div class="container alert alert-secondary">
     <form id="transaction_form">
 
         <div class="row">
           <label class="col-sm-2">Sender Address:</label>
           <div class="col-sm-10">
-            <input type="text" name="sender_address" rows="2" class="form-control">
+            <input type="text" name="sender_address" id="sender_address" rows="2" class="form-control">
 
           </div>
         </div>
@@ -89,7 +76,7 @@
         <div class="row">
           <label class="col-sm-2">Sender Private Key:</label>
           <div class="col-sm-10">
-            <input type="text" name="sender_private_key" rows="2" class="form-control">
+            <input type="text" name="sender_private_key" id="sender_private_key" rows="2" class="form-control">
           </div>
         </div>
 
@@ -98,7 +85,7 @@
         <div class="row">
           <label class="col-sm-2">Recipient Address:</label>
           <div class="col-sm-10">
-            <input type="text" name="recipient_address" rows="2" class="form-control">
+            <input type="text" name="recipient_address" id="recipient_address" rows="2" class="form-control">
           </div>
         </div>
 
@@ -107,7 +94,7 @@
         <div class="row">
           <label class="col-sm-2">Amount to Send:</label>
           <div class="col-sm-10">
-            <input type="text" name="amount" rows="2" class="form-control">
+            <input type="text" name="amount" id="amount" rows="2" class="form-control">
           </div>
         </div>
 
@@ -125,25 +112,71 @@
     </div>
 
 
+    <!-- Modal -->
+    <div class="modal modal-alert fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+      <div class="modal-dialog">
 
-    <div class="container">
+        <div class="modal-content">
 
-        <div class="row" id="warning" style="display:none">
-          <div class="col-sm-12">
-            <div class="alert alert-danger" role="alert">
-              IMPORTANT
-              <ul>
-                <li>Save you private and public keys. These keys cannot be recovered!</li>
-                <li>Don't share your private key with anyone!</li>
-              </ul> 
-            </div>
+          <div class="modal-header">
+            <div class="modal-title col-md-10">Confirm transaction details, enter a blockchain node url and click on "Confirm Transaction" to finalize your transaction.</div>
+            <button type="button" class="close col-md-2" data-dismiss="modal" aria-hidden="true">&times;</button>
           </div>
+
+          <div class="modal-body">
+
+            <form id="confirmation_transaction_form">
+
+                <div class="row">
+                  <label class="col-sm-12">Sender Address:</label>
+                  <div class="col-sm-12">
+                    <input type="text" name="sender_address" id="confirmation_sender_address" rows="2" class="form-control" readonly>
+
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label class="col-sm-12">Recipient Address:</label>
+                  <div class="col-sm-12">
+                    <input type="text" name="recipient_address" id="confirmation_recipient_address" rows="2" class="form-control" readonly>
+                  </div>
+                </div>
+                
+                <div class="row">
+                  <label class="col-sm-12">Amount to Send:</label>
+                  <div class="col-sm-12">
+                    <input type="text" name="amount" id="confirmation_amount" rows="2" class="form-control" readonly>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label class="col-sm-12">Transaction Signature:</label>
+                  <div class="col-sm-12">
+                    <input type="text" name="signature" id="transaction_signature" rows="2" class="form-control" readonly>
+                  </div>
+                </div>
+
+            </form>
+
+
+            <div class="row">
+              <label class="col-sm-12">Blockchain Node URL:</label>
+              <div class="col-sm-12">
+                <input type="text" name="node_url" id="node_url" rows="2" class="form-control" value="http://127.0.0.1:5000">
+              </div>
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+            <button type="button" id="button_confirm_transaction" class="btn btn-success">Confirm Transaction</button>
+          </div>
+
         </div>
 
+      </div>
     </div>
-
-
-
 
 
 
@@ -163,25 +196,49 @@
               dataType : 'json',
               data: $('#transaction_form').serialize(),
               success: function(response){
-                console.log("Successful Transaction");
 
+                document.getElementById("confirmation_sender_address").value = response["transaction"]["sender_address"];
+                document.getElementById("confirmation_recipient_address").value = response["transaction"]["recipient_address"];
+                document.getElementById("confirmation_amount").value = response["transaction"]["value"];
+                document.getElementById("transaction_signature").value = response["signature"];
+
+                $("#basicModal").modal('show');
+                
               },
               error: function(error){
                 console.log(error);
               }
             });
 
-
-            
           });
       });
 
 
+      $(function () {
+          $("#button_confirm_transaction").click(function () {
+            //console.log($('#confirmation_transaction_form').serialize());
 
+
+            $.ajax({
+              url: document.getElementById("node_url").value + "/transactions/new",
+              type: "POST",
+              headers: {'Access-Control-Allow-Origin':'*'},
+              dataType : 'json',
+              data: $('#confirmation_transaction_form').serialize(),
+              success: function(response){
+
+                console.log(response);
+                
+              },
+              error: function(error){
+                console.log(error);
+              }
+            });
+
+          });
+      });
 
     </script>
-
-
 
 
   </body>

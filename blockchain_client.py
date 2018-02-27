@@ -70,13 +70,12 @@ def generate_transaction():
 	recipient_address = request.form['recipient_address']
 	value = request.form['amount']
 
+
 	transaction = Transaction(sender_address, sender_private_key, recipient_address, value)
 
 	response = {'transaction': transaction.to_dict(), 'signature': transaction.sign_transaction()}
 
 	return jsonify(response), 200
-
-
 
 
 if __name__ == '__main__':
