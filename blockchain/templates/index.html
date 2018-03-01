@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Blockchain Frontend</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/vendor/DataTables/css/datatables.min.css" rel="stylesheet">
+    <link href="/static/css/custom.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="#">Blockchain Frontend</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="/">Mine
+                <span class="sr-only">(current)</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/configure">Configure</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+
+    <!--  -->
+    <div class="container">
+
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card-body">
+            <h6 class="card-title">Transactions to be added to the next block</h6>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Unmined Transactions Table -->
+    <div class="container">
+      <table id="unmined_transactions_table" class="table table-striped table-bordered" cellspacing="0" width="100%">
+      </table>
+
+      <div class="col-lg-12 text-center">
+        <input type="button" id="mine_button" class="btn btn-primary btn-lg" value="Mine">
+      </div>
+
+    </div>
+
+    <hr>
+
+    <div class="container">
+
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card-body">
+            <h6 class="card-title">Transactions on the Blockchain</h6>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Blockchain Transactions Table -->
+    <div class="container">
+      <table id="transactions_table" class="table table-striped table-bordered" cellspacing="0" width="100%">
+      </table>
+    </div>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="/static/vendor/jquery/jquery.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/static/vendor/DataTables/js/datatables.min.js"></script>
+    <script src="/static/vendor/DataTables/js/ellipsis.js"></script>
+
+
+    <script>
+      $(function(){
+
+        $.ajax({
+          url: "/transactions/get",
+          type: 'GET',
+          success: function(response){
+
+            console.log(response['transactions']);
+            //Generate Transactions Table
+              //Generate Transactions Table
+              var transactions = [];
+              count = 1;
+
+              for (i = 0; i < response['transactions'].length; i++) { 
+
+                transaction = [count,
+                              response['transactions'][i]["recipient_address"],
+                              response['transactions'][i]["sender_address"],
+                              response['transactions'][i]["value"]];
+
+                  transactions.push(transaction);
+
+                  count += 1;
+              };
+
+            // Restrict a column to 10 characters, do split words
+              $('#unmined_transactions_table').dataTable( {
+                data: transactions,
+                columns: [{ title: "#" },
+                          { title: "Recipient Address"},
+                          { title: "Sender Address"},
+                          { title: "Value"}],
+                columnDefs: [ {targets: [1,2,3], render: $.fn.dataTable.render.ellipsis( 25 )}]
+              } );
+
+          },
+          error: function(error){
+            console.log(error);
+          }
+        });
+
+
+
+        $.ajax({
+          url: "/chain",
+          type: 'GET',
+          success: function(response){
+
+            console.log(response);
+            //Generate Transactions Table
+            var transactions = [];
+            count = 1;
+
+            for (i = 1; i < response.length; i++) { 
+              for (j = 0; j < response["chain"][i]["transactions"].length; j++) {
+
+                //format date 
+                var options = {  year: "numeric", month: "short",  day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit"  };
+                var date = new Date(response["chain"][i]["timestamp"] * 1000);
+                var formattedDateTime = date.toLocaleTimeString("en-us", options);
+
+                transaction = [count,
+                              response["chain"][i]["transactions"][j]["recipient_address"],
+                              response["chain"][i]["transactions"][j]["sender_address"],
+                              response["chain"][i]["transactions"][j]["value"],
+                              formattedDateTime,
+                              response["chain"][i]["block_number"]];
+                transactions.push(transaction);
+
+                count += 1;
+              };
+            };
+
+            // Restrict a column to 10 characters, do split words
+              $('#transactions_table').dataTable( {
+                data: transactions,
+                columns: [{ title: "#" },
+                          { title: "Recipient Address"},
+                          { title: "Sender Address"},
+                          { title: "Value"},
+                          { title: "Timestamp"},
+                          { title: "Block"}],
+                columnDefs: [ {targets: [1,2,3,4,5], render: $.fn.dataTable.render.ellipsis( 25 )}]
+              } );
+
+          },
+          error: function(error){
+            console.log(error);
+          }
+        });
+
+
+        $("#mine_button").click(function () {
+
+          $.ajax({
+            url: "/mine",
+            type: "GET",
+            success: function(response){
+
+              window.location.reload();
+              
+            },
+            error: function(error){
+              console.log(error);
+            }
+          });
+
+        });
+
+      })
+
+
+
+
+
+    </script>
+
+
+
+  </body>
+
+</html>

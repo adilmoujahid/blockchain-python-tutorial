@@ -8,7 +8,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Blockchain Frontend</title>
+    <title>Blockchain Client</title>
 
     <!-- Bootstrap core CSS -->
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -21,7 +21,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <a class="navbar-brand" href="#">My blockchain</a>
+        <a class="navbar-brand" href="#">Blockchain Client</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -36,7 +36,7 @@
               <span class="sr-only">(current)</span>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Check Transactions</a>
+              <a class="nav-link" href="/view/transactions">View Transactions</a>
             </li>
           </ul>
         </div>
@@ -179,6 +179,31 @@
     </div>
 
 
+    <!-- Alert Message for successful transaction -->
+    <div class="modal modal-alert fade" id="success_transaction_modal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="alert alert-success" role="alert">
+              <h4 class="alert-heading">Successful Transaction!</h4>
+              <p>You successfully completed your transaction. It will be added to the next block.</p>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" id="button_confirm_transaction" class="btn btn-success" data-dismiss="modal">OK</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
 
     <!-- Bootstrap core JavaScript -->
     <script src="/static/vendor/jquery/jquery.min.js"></script>
@@ -227,7 +252,18 @@
               data: $('#confirmation_transaction_form').serialize(),
               success: function(response){
 
-                console.log(response);
+                //reset both forms
+                $("#transaction_form")[0].reset();
+                $("#confirmation_transaction_form")[0].reset();
+                
+                //clean text boxes
+                $("#sender_address").val("");
+                $("#sender_private_key").val("");
+                $("#recipient_address").val("");
+                $("#amount").val("");
+
+                $("#basicModal").modal('hide');
+                $("#success_transaction_modal").modal('show');
                 
               },
               error: function(error){

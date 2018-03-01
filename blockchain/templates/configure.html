@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Blockchain Frontend</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/vendor/DataTables/css/datatables.min.css" rel="stylesheet">
+    <link href="/static/css/custom.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="#">Blockchain Frontend</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Mine</a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="/configure">Configure
+                <span class="sr-only">(current)</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+
+    <!-- Add nodes -->
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12">
+
+          <div class="card-body">
+            <h6 class="card-title">Add Blockchain node</h6>
+            <p class="card-text">Enter a list of Blockchain node URLs separated by comma and click on "Add" button to add them to the list of nodes</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="container alert alert-secondary">
+      <form id="node_form">
+        <div class="row">
+          <label class="col-sm-2">Node URLs:</label>
+          <div class="col-sm-10">
+            <input type="text" name="nodes" id="nodes" rows="2" class="form-control">
+          </div>
+        </div>
+
+        <br>
+
+        <div class="row">
+          <div class="col-lg-12 text-center">
+            <input type="button" id="add_node_button" class="btn btn-primary btn-lg" value="Add Node">
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <hr>
+
+    <!-- List of nodes -->
+    <div class="container">
+      <div class="row">
+
+        <div class="col-lg-12">
+          <div class="card-body">
+            <h6 class="card-title">This node can retrieve Blockchain data from the following nodes:</h6>
+          </div>
+        </div>
+
+        <div class="col-lg-12" id="list_nodes">
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="/static/vendor/jquery/jquery.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="/static/vendor/DataTables/js/datatables.min.js"></script>
+    <script src="/static/vendor/DataTables/js/ellipsis.js"></script>
+
+
+    <script>
+      $(function(){
+
+          $("#add_node_button").click(function () {
+            //console.log($('#confirmation_transaction_form').serialize());
+
+            $.ajax({
+              url: "/nodes/register",
+              type: "POST",
+              dataType : 'json',
+              data: $('#node_form').serialize(),
+              success: function(response){
+
+                console.log(response);
+                document.getElementById("nodes").value = "";  
+                window.location.reload();
+
+              },
+              error: function(error){
+                console.log(error);
+              }
+            });
+
+          });
+
+
+        $.ajax({
+          url: "/nodes/get",
+          type: 'GET',
+          success: function(response){
+
+            console.log(response['nodes']);
+            var node = "";
+            
+            for (i = 0; i < response['nodes'].length; i++) { 
+              //node = "<li>" + response['nodes'][i] + "</li>";
+              node = "<li> <a href=http://" + response['nodes'][i] + ">" + response['nodes'][i] +"</a></li>";
+              document.getElementById("list_nodes").innerHTML += node;
+
+            };
+          
+          },
+          error: function(error){
+            console.log(error);
+          }
+        });
+
+
+      })
+
+
+
+
+
+    </script>
+
+
+
+  </body>
+
+</html>

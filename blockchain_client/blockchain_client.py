@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import binascii
 
 import Crypto
@@ -22,9 +24,9 @@ class Transaction:
         return self.data[attr]
 
     def to_dict(self):
-        return {'sender_address': self.sender_address,
-                'recipient_address': self.recipient_address,
-                'value': self.value}
+        return OrderedDict({'sender_address': self.sender_address,
+                            'recipient_address': self.recipient_address,
+                            'value': self.value})
 
     def sign_transaction(self):
         """
@@ -43,6 +45,13 @@ app = Flask(__name__)
 def index():
 	return render_template('./index.html')
 
+@app.route('/make/transaction')
+def make_transaction():
+    return render_template('./make_transaction.html')
+
+@app.route('/view/transactions')
+def view_transaction():
+    return render_template('./view_transactions.html')
 
 @app.route('/wallet/new', methods=['GET'])
 def new_wallet():
@@ -56,12 +65,6 @@ def new_wallet():
 
 	return jsonify(response), 200
 
-
-@app.route('/make/transaction')
-def make_transaction():
-	return render_template('./make_transaction.html')
-
-
 @app.route('/generate/transaction', methods=['POST'])
 def generate_transaction():
 	
@@ -69,7 +72,6 @@ def generate_transaction():
 	sender_private_key = request.form['sender_private_key']
 	recipient_address = request.form['recipient_address']
 	value = request.form['amount']
-
 
 	transaction = Transaction(sender_address, sender_private_key, recipient_address, value)
 

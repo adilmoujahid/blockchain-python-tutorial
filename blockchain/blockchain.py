@@ -14,6 +14,8 @@ References      : https://github.com/dvf/blockchain/blob/master/blockchain.py
                   https://github.com/julienr/ipynb_playground/blob/master/bitcoin/dumbcoin/dumbcoin.ipynb
                   https://github.com/blockchain-academy/how-build-your-own-blockchain/tree/master/src
 '''
+from collections import OrderedDict
+
 import binascii
 
 import Crypto
@@ -29,7 +31,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
 
@@ -38,19 +40,6 @@ MINING_SENDER = "THE BLOCKCHAIN"
 MINING_REWARD = 1
 MINING_DIFFICULTY = 2
 
-
-
-class Node:
-
-    def __init__(self, node_id, node_url):
-        self.node_id = node_id
-        self.node_url = node_url
-
-    def __getattr__(self, attr):
-        return self.data[attr]
-
-    def to_string(self):
-        return str(self.node_id) + ':' + str(self.node_url)
 
 
 class Blockchain:
@@ -73,12 +62,10 @@ class Blockchain:
         #Checking node_url has valid format
         parsed_url = urlparse(node_url)
         if parsed_url.netloc:
-            node = Node(self.node_id, parsed_url.netloc)
-            self.nodes.add(node)
+            self.nodes.add(parsed_url.netloc)
         elif parsed_url.path:
             # Accepts an URL without scheme like '192.168.0.5:5000'.
-            node = Node(self.node_id, parsed_url.path)
-            self.nodes.add(node)
+            self.nodes.add(parsed_url.path)
         else:
             raise ValueError('Invalid URL')
 
@@ -99,9 +86,9 @@ class Blockchain:
         Description
         """
 
-        transaction = {'sender_address': sender_address, 
-                        'recipient_address': recipient_address,
-                        'value': value}
+        transaction = OrderedDict({'sender_address': sender_address, 
+                                    'recipient_address': recipient_address,
+                                    'value': value})
 
         #Reward for mining a block
         if sender_address == MINING_SENDER:
@@ -241,6 +228,22 @@ CORS(app)
 # Instantiate the Blockchain
 blockchain = Blockchain()
 
+@app.route('/')
+def index():
+    return render_template('./index.html')
+
+@app.route('/configure')
+def configure():
+    return render_template('./configure.html')
+
+@app.route('/transactions/get', methods=['GET'])
+def get_transactions():
+    #Get transactions from transactions pool
+    transactions = blockchain.transactions
+
+    response = {'transactions': transactions}
+    return jsonify(response), 200
+
 
 @app.route('/mine', methods=['GET'])
 def mine():
@@ -281,7 +284,7 @@ def new_transaction():
         response = {'message': 'Invalid Transaction!'}
         return jsonify(response), 406
     else:
-        response = {'message': 'Transaction will be added to Block '+ str(index)}
+        response = {'message': 'Transaction will be added to Block '+ str(transaction_result)}
         return jsonify(response), 201
 
 
@@ -296,9 +299,9 @@ def full_chain():
 
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
-    values = request.get_json()
+    values = request.form
+    nodes = values.get('nodes').replace(" ", "").split(',')
 
-    nodes = values.get('nodes')
     if nodes is None:
         return "Error: Please supply a valid list of nodes", 400
 
@@ -307,9 +310,17 @@ def register_nodes():
 
     response = {
         'message': 'New nodes have been added',
-        'total_nodes': [node.to_string() for node in blockchain.nodes],
+        'total_nodes': [node for node in blockchain.nodes],
     }
     return jsonify(response), 201
+
+
+@app.route('/nodes/get', methods=['GET'])
+def get_nodes():
+    #Get transactions from transactions pool
+    nodes = list(blockchain.nodes)
+    response = {'nodes': nodes}
+    return jsonify(response), 200
 
 
 @app.route('/nodes/resolve', methods=['GET'])
