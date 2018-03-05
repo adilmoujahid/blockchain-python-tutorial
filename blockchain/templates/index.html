@@ -13,6 +13,7 @@
     <!-- Bootstrap core CSS -->
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/vendor/DataTables/css/datatables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link href="/static/css/custom.css" rel="stylesheet">
 
   </head>
@@ -41,14 +42,17 @@
       </div>
     </nav>
 
-
     <!--  -->
     <div class="container">
 
       <div class="row">
         <div class="col-lg-12">
           <div class="card-body">
-            <h6 class="card-title">Transactions to be added to the next block</h6>
+            <h4 class="card-title">Transactions to be added to the next block &nbsp;&nbsp;&nbsp;
+              <button type="submit" id="refresh_transactions" class="btn btn-sq-xs btn-primary">
+                <i class="fa fa-refresh"></i>
+              </button>
+            </h4>
           </div>
         </div>
       </div>
@@ -73,7 +77,11 @@
       <div class="row">
         <div class="col-lg-12">
           <div class="card-body">
-            <h6 class="card-title">Transactions on the Blockchain</h6>
+            <h4 class="card-title">Transactions on the Blockchain &nbsp;&nbsp;&nbsp;
+              <button type="submit" id="refresh_blockchain" class="btn btn-sq-xs btn-primary">
+                <i class="fa fa-refresh"></i>
+              </button>
+            </h4>
           </div>
         </div>
       </div>
@@ -202,6 +210,34 @@
           });
 
         });
+
+
+        $("#refresh_transactions").click(function () {
+
+          window.location.reload();
+
+        });
+
+
+        $("#refresh_blockchain").click(function () {
+
+          $.ajax({
+            url: "/nodes/resolve",
+            type: "GET",
+            success: function(response){
+
+              window.location.reload();
+              
+            },
+            error: function(error){
+              console.log(error);
+            }
+          });
+
+        });
+
+
+        
 
       })
 

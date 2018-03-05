@@ -202,8 +202,8 @@ class Blockchain:
 
         # Grab and verify the chains from all the nodes in our network
         for node in neighbours:
-            print('http://' + node.node_url + '/chain')
-            response = requests.get('http://' + node.node_url + '/chain')
+            print('http://' + node + '/chain')
+            response = requests.get('http://' + node + '/chain')
 
             if response.status_code == 200:
                 length = response.json()['length']
