@@ -270,7 +270,6 @@ def mine():
     nonce = blockchain.proof_of_work()
 
     # We must receive a reward for finding the proof.
-    # The sender is "0" to signify that this node has mined a new coin.
     blockchain.submit_transaction(sender_address=MINING_SENDER, recipient_address=blockchain.node_id, value=MINING_REWARD, signature="")
 
     # Forge the new Block by adding it to the chain
