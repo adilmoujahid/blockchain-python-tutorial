@@ -1,19 +1,22 @@
 '''
 title           : blockchain.py
-description     :
+description     : A blockchain implemenation
 author          : Adil Moujahid
 date_created    : 20180212
-date_modified   : 20180212
-version         : 0.3
+date_modified   : 20180309
+version         : 0.5
 usage           : python blockchain.py
                   python blockchain.py -p 5000
                   python blockchain.py --port 5000
 python_version  : 3.6.1
-License         : MIT License
-References      : https://github.com/dvf/blockchain/blob/master/blockchain.py
-                  https://github.com/julienr/ipynb_playground/blob/master/bitcoin/dumbcoin/dumbcoin.ipynb
-                  https://github.com/blockchain-academy/how-build-your-own-blockchain/tree/master/src
+Comments        : The blockchain implementation is mostly based on [1]. 
+                  I made a few modifications to the original code in order to add RSA encryption to the transactions 
+                  based on [2], changed the proof of work algorithm, and added some Flask routes to interact with the 
+                  blockchain from the dashboards
+References      : [1] https://github.com/dvf/blockchain/blob/master/blockchain.py
+                  [2] https://github.com/julienr/ipynb_playground/blob/master/bitcoin/dumbcoin/dumbcoin.ipynb
 '''
+
 from collections import OrderedDict
 
 import binascii
@@ -39,7 +42,6 @@ from flask_cors import CORS
 MINING_SENDER = "THE BLOCKCHAIN"
 MINING_REWARD = 1
 MINING_DIFFICULTY = 2
-
 
 
 class Blockchain:
@@ -72,8 +74,8 @@ class Blockchain:
 
     def verify_transaction_signature(self, sender_address, signature, transaction):
         """
-        Check that the provided `signature` corresponds to `message`
-        signed by the wallet at `wallet_address`
+        Check that the provided signature corresponds to transaction
+        signed by the public key (sender_address)
         """
         public_key = RSA.importKey(binascii.unhexlify(sender_address))
         verifier = PKCS1_v1_5.new(public_key)
@@ -83,9 +85,8 @@ class Blockchain:
 
     def submit_transaction(self, sender_address, recipient_address, value, signature):
         """
-        Description
+        Add a transaction to transactions array if the signature verified
         """
-
         transaction = OrderedDict({'sender_address': sender_address, 
                                     'recipient_address': recipient_address,
                                     'value': value})
@@ -104,18 +105,15 @@ class Blockchain:
                 return False
 
 
-
     def create_block(self, nonce, previous_hash):
         """
-        Description
+        Add a block of transactions to the blockchain
         """
-
         block = {'block_number': len(self.chain) + 1,
                 'timestamp': time(),
                 'transactions': self.transactions,
                 'nonce': nonce,
                 'previous_hash': previous_hash}
-
 
         # Reset the current list of transactions
         self.transactions = []
@@ -126,9 +124,8 @@ class Blockchain:
 
     def hash(self, block):
         """
-        Creates a SHA-256 hash of a Block
+        Create a SHA-256 hash of a block
         """
-
         # We must make sure that the Dictionary is Ordered, or we'll have inconsistent hashes
         block_string = json.dumps(block, sort_keys=True).encode()
         
@@ -137,35 +134,31 @@ class Blockchain:
 
     def proof_of_work(self):
         """
-        Description
+        Proof of work algorithm
         """
-
         last_block = self.chain[-1]
-        last_nonce = last_block['nonce']
         last_hash = self.hash(last_block)
 
         nonce = 0
-        while self.valid_proof(last_nonce, nonce, last_hash) is False:
+        while self.valid_proof(self.transactions, last_hash, nonce) is False:
             nonce += 1
 
         return nonce
 
 
-    def valid_proof(self, last_nonce, nonce, last_hash, difficulty=MINING_DIFFICULTY):
+    def valid_proof(self, transactions, last_hash, nonce, difficulty=MINING_DIFFICULTY):
         """
-        Description
+        Check if a hash value satisfies the mining conditions. This function is used within the proof_of_work function.
         """
-
-        guess = (str(last_nonce)+str(nonce)+last_hash).encode()
+        guess = (str(transactions)+str(last_hash)+str(nonce)).encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:difficulty] == '0'*difficulty
 
 
     def valid_chain(self, chain):
         """
-        Description
+        check if a bockchain is valid
         """
-
         last_block = chain[0]
         current_index = 1
 
@@ -189,11 +182,9 @@ class Blockchain:
 
     def resolve_conflicts(self):
         """
-        This is our consensus algorithm, it resolves conflicts
+        Resolve conflicts between blockchain's nodes
         by replacing our chain with the longest one in the network.
-        :return: True if our chain was replaced, False if not
         """
-
         neighbours = self.nodes
         new_chain = None
 
@@ -236,6 +227,26 @@ def index():
 def configure():
     return render_template('./configure.html')
 
+
+
+@app.route('/transactions/new', methods=['POST'])
+def new_transaction():
+    values = request.form
+
+    # Check that the required fields are in the POST'ed data
+    required = ['sender_address', 'recipient_address', 'amount', 'signature']
+    if not all(k in values for k in required):
+        return 'Missing values', 400
+    # Create a new Transaction
+    transaction_result = blockchain.submit_transaction(values['sender_address'], values['recipient_address'], values['amount'], values['signature'])
+
+    if transaction_result == False:
+        response = {'message': 'Invalid Transaction!'}
+        return jsonify(response), 406
+    else:
+        response = {'message': 'Transaction will be added to Block '+ str(transaction_result)}
+        return jsonify(response), 201
+
 @app.route('/transactions/get', methods=['GET'])
 def get_transactions():
     #Get transactions from transactions pool
@@ -244,6 +255,13 @@ def get_transactions():
     response = {'transactions': transactions}
     return jsonify(response), 200
 
+@app.route('/chain', methods=['GET'])
+def full_chain():
+    response = {
+        'chain': blockchain.chain,
+        'length': len(blockchain.chain),
+    }
+    return jsonify(response), 200
 
 @app.route('/mine', methods=['GET'])
 def mine():
@@ -269,33 +287,6 @@ def mine():
     return jsonify(response), 200
 
 
-@app.route('/transactions/new', methods=['POST'])
-def new_transaction():
-    values = request.form
-
-    # Check that the required fields are in the POST'ed data
-    required = ['sender_address', 'recipient_address', 'amount', 'signature']
-    if not all(k in values for k in required):
-        return 'Missing values', 400
-    # Create a new Transaction
-    transaction_result = blockchain.submit_transaction(values['sender_address'], values['recipient_address'], values['amount'], values['signature'])
-
-    if transaction_result == False:
-        response = {'message': 'Invalid Transaction!'}
-        return jsonify(response), 406
-    else:
-        response = {'message': 'Transaction will be added to Block '+ str(transaction_result)}
-        return jsonify(response), 201
-
-
-@app.route('/chain', methods=['GET'])
-def full_chain():
-    response = {
-        'chain': blockchain.chain,
-        'length': len(blockchain.chain),
-    }
-    return jsonify(response), 200
-
 
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
@@ -315,14 +306,6 @@ def register_nodes():
     return jsonify(response), 201
 
 
-@app.route('/nodes/get', methods=['GET'])
-def get_nodes():
-    #Get transactions from transactions pool
-    nodes = list(blockchain.nodes)
-    response = {'nodes': nodes}
-    return jsonify(response), 200
-
-
 @app.route('/nodes/resolve', methods=['GET'])
 def consensus():
     replaced = blockchain.resolve_conflicts()
@@ -337,7 +320,14 @@ def consensus():
             'message': 'Our chain is authoritative',
             'chain': blockchain.chain
         }
+    return jsonify(response), 200
 
+
+@app.route('/nodes/get', methods=['GET'])
+def get_nodes():
+    #Get transactions from transactions pool
+    nodes = list(blockchain.nodes)
+    response = {'nodes': nodes}
     return jsonify(response), 200
 
 
