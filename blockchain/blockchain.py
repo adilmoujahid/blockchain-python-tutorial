@@ -325,7 +325,6 @@ def consensus():
 
 @app.route('/nodes/get', methods=['GET'])
 def get_nodes():
-    #Get transactions from transactions pool
     nodes = list(blockchain.nodes)
     response = {'nodes': nodes}
     return jsonify(response), 200
