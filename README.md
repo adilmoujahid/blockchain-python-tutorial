@@ -28,7 +28,7 @@ This github repository also contains 2 dashboards:
 
 # Dependencies
 
-- Works with ```Python``` 3.6
+- Works with ```Python 3.6``` 
 - [Anaconda's Python distribution](https://www.continuum.io/downloads) contains all the dependencies for the code to run.
 
 # How to run the code
