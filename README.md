@@ -1,4 +1,4 @@
-# Blockchain Python Intro
+# Blockchain Python tutorial
 * Source Code for my upcoming blog post: A Practical Introduction to Blockchain using Python
 
 ## Important: This project is for educational purposes only and the source code shouldn't be use in production as it doesn't have good security, doesn't scale well and lacks many important features.
