@@ -164,15 +164,21 @@ class Blockchain:
 
         while current_index < len(chain):
             block = chain[current_index]
-            print(last_block)
-            print(block)
-            print("\n-----------\n")
+            #print(last_block)
+            #print(block)
+            #print("\n-----------\n")
             # Check that the hash of the block is correct
             if block['previous_hash'] != self.hash(last_block):
                 return False
 
             # Check that the Proof of Work is correct
-            if not self.valid_proof(last_block['nonce'], block['nonce'], block['previous_hash']):
+            #Delete the reward transaction
+            transactions = block['transactions'][:-1]
+            # Need to make sure that the dictionary is ordered. Otherwise we'll get a different hash
+            transaction_elements = ['sender_address', 'recipient_address', 'value']
+            transactions = [OrderedDict((k, transaction[k]) for k in transaction_elements) for transaction in transactions]
+
+            if not self.valid_proof(transactions, block['previous_hash'], block['nonce'], MINING_DIFFICULTY):
                 return False
 
             last_block = block
