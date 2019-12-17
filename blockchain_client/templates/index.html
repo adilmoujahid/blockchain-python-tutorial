@@ -11,34 +11,32 @@
     <title>Blockchain Client</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/css/custom.css" rel="stylesheet">
+    <link href="../static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../static/css/custom.css" rel="stylesheet">
 
   </head>
 
   <body>
 
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
       <div class="container">
-        <a class="navbar-brand" href="#">Blockchain Client</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
         <div class="collapse navbar-collapse" id="navbarResponsive">
-          <ul class="navbar-nav ml-auto">
+          <center>
+            <ul class="navbar-nav ml-auto">
             <li class="nav-item active">
-              <a class="nav-link" href="/">Wallet Generator
+              <a class="nav-link" href="/">Создать кошелек
                 <span class="sr-only">(current)</span>
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/make/transaction">Make Transaction</a>
+              <a class="nav-link" href="/make/transaction">Осуществить транзакцию</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/view/transactions">View Transactions</a>
+              <a class="nav-link" href="/view/transactions">Посмотреть историю</a>
             </li>
           </ul>
+          </center>
         </div>
       </div>
     </nav>
@@ -51,9 +49,10 @@
 
 
           <div class="card-body">
-            <h4 class="card-title">Wallet Generator</h4>
-            <p class="card-text">Click on the button below to generate your blockchain wallet</p>
-            <input type="button" class="btn btn-primary btn-lg" value="Generate Wallet">
+            <h4 class="card-title">Сгенерировать кошелек</h4>
+            <p class="card-text">Я не знаю, что можно здесь написать, но так красивее</p>
+            <input type="button" class="btn btn-secondary" value="Регистрация">
+            <input type="button" class="btn btn-secondary" value="Войти">
           </div>
 
         </div>
@@ -101,8 +100,8 @@
 
 
     <!-- Bootstrap core JavaScript -->
-    <script src="/static/vendor/jquery/jquery.min.js"></script>
-    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../static/vendor/jquery/jquery.min.js"></script>
+    <script src="../static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 
     <script>
