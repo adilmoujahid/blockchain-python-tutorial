@@ -108,28 +108,34 @@
 
               console.log(response);
               //Generate Transactions Table
-              var transactions = [];
-              count = 1;
+              let transactions = [];
+              let count = 1;
 
-              for (i = 1; i < response.length; i++) { 
-                for (j = 0; j < response["chain"][i]["transactions"].length; j++) {
+              for (let i = 1; i < response.length; i++) {
+                let block = response["chain"][i];
+                for (let j = 0; j < block["transactions"].length; j++) {
 
                   //format date 
-                  var options = {  year: "numeric", month: "short",  day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit"  };
-                  var date = new Date(response["chain"][i]["timestamp"] * 1000);
-                  var formattedDateTime = date.toLocaleTimeString("en-us", options);
+                  let options = {
+                    year: "numeric", month: "short",  day: "numeric",
+                    hour: "2-digit", minute: "2-digit", second: "2-digit"
+                  };
+                  let date = new Date(block["transactions"][j]["timestamp"] * 1000);
+                  let formattedDateTime = date.toLocaleTimeString("en-us", options);
 
-                  transaction = [count,
-                                response["chain"][i]["transactions"][j]["recipient_address"],
-                                response["chain"][i]["transactions"][j]["sender_address"],
-                                response["chain"][i]["transactions"][j]["value"],
+                  let transaction = [
+                                count,
+                                block["transactions"][j]["recipient_address"],
+                                block["transactions"][j]["sender_address"],
+                                block["transactions"][j]["value"],
                                 formattedDateTime,
-                                response["chain"][i]["block_number"]];
+                                block["block_number"]
+                  ];
                   transactions.push(transaction);
 
                   count += 1;
-                };
-              };
+                }
+              }
 
               // Restrict a column to 10 characters, do split words
                 $('#transactions_table').dataTable( {

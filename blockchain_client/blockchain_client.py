@@ -1,6 +1,6 @@
 '''
 title           : blockchain_client.py
-description     : A blockchain client implemenation, with the following features
+description     : A blockchain client implementation, with the following features
                   - Wallets generation using Public/Private key encryption (based on RSA algorithm)
                   - Generation of transactions with RSA encryption      
 author          : Adil Moujahid
@@ -18,6 +18,7 @@ References      : [1] https://github.com/julienr/ipynb_playground/blob/master/bi
 from collections import OrderedDict
 
 import binascii
+from time import time
 
 import Crypto
 import Crypto.Random
@@ -31,10 +32,11 @@ from flask import Flask, jsonify, request, render_template
 
 class Transaction:
 
-    def __init__(self, sender_address, sender_private_key, recipient_address, value):
+    def __init__(self, sender_address, sender_private_key, recipient_address, value, timestamp=time()):
         self.sender_address = sender_address
         self.sender_private_key = sender_private_key
         self.recipient_address = recipient_address
+        self.timestamp = timestamp
         self.value = value
 
     def __getattr__(self, attr):
@@ -43,7 +45,8 @@ class Transaction:
     def to_dict(self):
         return OrderedDict({'sender_address': self.sender_address,
                             'recipient_address': self.recipient_address,
-                            'value': self.value})
+                            'value': self.value,
+                            'timestamp': self.timestamp})
 
     def sign_transaction(self):
         """
@@ -55,46 +58,49 @@ class Transaction:
         return binascii.hexlify(signer.sign(h)).decode('ascii')
 
 
-
 app = Flask(__name__)
+
 
 @app.route('/')
 def index():
-	return render_template('./index.html')
+    return render_template('./index.html')
+
 
 @app.route('/make/transaction')
 def make_transaction():
     return render_template('./make_transaction.html')
 
+
 @app.route('/view/transactions')
 def view_transaction():
     return render_template('./view_transactions.html')
 
+
 @app.route('/wallet/new', methods=['GET'])
 def new_wallet():
-	random_gen = Crypto.Random.new().read
-	private_key = RSA.generate(1024, random_gen)
-	public_key = private_key.publickey()
-	response = {
-		'private_key': binascii.hexlify(private_key.exportKey(format='DER')).decode('ascii'),
-		'public_key': binascii.hexlify(public_key.exportKey(format='DER')).decode('ascii')
-	}
+    random_gen = Crypto.Random.new().read
+    private_key = RSA.generate(1024, random_gen)
+    public_key = private_key.publickey()
+    response = {
+        'private_key': binascii.hexlify(private_key.exportKey(format='DER')).decode('ascii'),
+        'public_key': binascii.hexlify(public_key.exportKey(format='DER')).decode('ascii')
+    }
 
-	return jsonify(response), 200
+    return jsonify(response), 200
+
 
 @app.route('/generate/transaction', methods=['POST'])
 def generate_transaction():
-	
-	sender_address = request.form['sender_address']
-	sender_private_key = request.form['sender_private_key']
-	recipient_address = request.form['recipient_address']
-	value = request.form['amount']
+    sender_address = request.form['sender_address']
+    sender_private_key = request.form['sender_private_key']
+    recipient_address = request.form['recipient_address']
+    value = request.form['amount']
 
-	transaction = Transaction(sender_address, sender_private_key, recipient_address, value)
+    transaction = Transaction(sender_address, sender_private_key, recipient_address, value)
 
-	response = {'transaction': transaction.to_dict(), 'signature': transaction.sign_transaction()}
+    response = {'transaction': transaction.to_dict(), 'signature': transaction.sign_transaction()}
 
-	return jsonify(response), 200
+    return jsonify(response), 200
 
 
 if __name__ == '__main__':

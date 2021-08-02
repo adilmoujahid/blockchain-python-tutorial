@@ -13,6 +13,14 @@
     <!-- Bootstrap core CSS -->
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/css/custom.css" rel="stylesheet">
+    <style>
+      .nav-link {
+        pointer-events: none;
+      }
+      #public_key, #public_key_label {
+        display: none;
+      }
+    </style>
 
   </head>
 
@@ -52,7 +60,11 @@
 
           <div class="card-body">
             <h4 class="card-title">Wallet Generator</h4>
-            <p class="card-text">Click on the button below to generate your blockchain wallet</p>
+            <p class="card-text">
+              <span>Click on the button below to generate your blockchain wallet</span><br>
+              <span>OR<br></span>
+              <span>Insert an existing wallet private key to restore it</span>
+            </p>
             <input type="button" class="btn btn-primary btn-lg" value="Generate Wallet">
           </div>
 
@@ -65,7 +77,7 @@
     <div class="container">
 
         <div class="row">
-          <label class="col-sm-2">Public Key:</label>
+          <label id="public_key_label" class="col-sm-2">Public Key:</label>
           <div class="col-sm-10">
             <textarea id="public_key" rows="5" class="form-control" readonly></textarea>
           </div>
@@ -76,7 +88,7 @@
         <div class="row">
           <label class="col-sm-2">Private Key:</label>
           <div class="col-sm-10">
-            <textarea id="private_key" rows="5" class="form-control" readonly></textarea>
+            <textarea id="private_key" rows="5" class="form-control"></textarea>
           </div>
         </div>
 
@@ -103,13 +115,37 @@
     <!-- Bootstrap core JavaScript -->
     <script src="/static/vendor/jquery/jquery.min.js"></script>
     <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-
     <script>
-
-      $(function(){
-        $('input').click(function(){
-
+      //Listener used when initialiting the blockchain
+      initBlockchainListener = ev => {
+        let getString = "", privateKeyString = $("#private_key").val();
+        if (privateKeyString.length > 0)
+          getString = "private_key=" + privateKeyString
+        $.ajax({
+          url: 'http://127.0.0.1:5000/init_blockchain?' + getString, //local ip could be replaced with real ip
+          type: 'GET',
+          crossDomain: true,
+          dataType: 'jsonp',
+          success: function(response){
+            document.getElementById("private_key").innerHTML = response['private_key'];
+            $("#private_key").readOnly = true;
+            document.getElementById("public_key").innerHTML = response['public_key'];
+            document.getElementById("public_key").style.display = "block";
+            document.getElementById("public_key_label").style.display = "block";
+            document.getElementById("warning").style.display = "block";
+            $(".nav-link").css("pointer-events", "all");
+            changeListener();
+          },
+          error: function(error){
+            console.log(error);
+          }
+        });
+      };
+      //Listener used when the blockchain is already initialized
+      function changeListener(){
+        let $input = $('input');
+        $input.off("click", initBlockchainListener);
+        $input.on("click", ev => {
           $.ajax({
             url: '/wallet/new',
             type: 'GET',
@@ -123,13 +159,11 @@
             }
           });
         });
+      }
+
+      $(function(){
+        $('input').on("click", initBlockchainListener);
       })
-
-
     </script>
-
-
-
   </body>
-
 </html>

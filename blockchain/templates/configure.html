@@ -14,6 +14,11 @@
     <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/vendor/DataTables/css/datatables.min.css" rel="stylesheet">
     <link href="/static/css/custom.css" rel="stylesheet">
+    <style>
+      td.address{
+        overflow-wrap: anywhere;
+      }
+    </style>
 
   </head>
 
@@ -88,6 +93,16 @@
         </div>
 
         <div class="col-lg-12" id="list_nodes">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">URL</th>
+                <th scope="col">Address</th>
+                <th scope="col">Reputation</th>
+              </tr>
+            </thead>
+            <tbody id="list_nodes_table_body"></tbody>
+          </table>
 
         </div>
 
@@ -130,17 +145,28 @@
         $.ajax({
           url: "/nodes/get",
           type: 'GET',
+          dataType: 'json',
           success: function(response){
-
             console.log(response['nodes']);
-            var node = "";
-            
-            for (i = 0; i < response['nodes'].length; i++) { 
-              //node = "<li>" + response['nodes'][i] + "</li>";
-              node = "<li> <a href=http://" + response['nodes'][i] + ">" + response['nodes'][i] +"</a></li>";
-              document.getElementById("list_nodes").innerHTML += node;
+            let $nodeTableBody = $("#list_nodes_table_body")
+            $nodeTableBody.empty();
+            let node = "";
+            for (let i = 0; i < response['nodes'].length; i++) {
+              response['nodes'][i] = JSON.parse(response['nodes'][i]);
+              node = "<tr>" +
+                      " <td>" +
+                      "   <span>" + response['nodes'][i]["_Node__url"] +"</span>" +
+                      " </td>" +
+                      " <td class='address'>" +
+                      "   <span>" + response['nodes'][i]["_Node__address"] +"</span>" +
+                      " </td>" +
+                      " <td>" +
+                      "   <span>" + response['nodes'][i]["_Node__reputation"] +"</span>" +
+                      " </td>" +
+                      "</tr>";
 
-            };
+              $nodeTableBody.append(node);
+            }
           
           },
           error: function(error){
